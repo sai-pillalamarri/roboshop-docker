@@ -1,0 +1,98 @@
+name: roboshop
+networks:
+  default: # this means all the services in this file use this network
+    name: roboshop
+    driver: bridge
+    external: false # if true it should be created manually, if false docker creates this network
+services:
+  mongodb:
+    build: ./mongodb
+    image: saipillalamarri/mongodb:v1
+    container_name : mongodb
+  
+  redis:
+    image: redis:7
+    container_name: redis
+
+  mysql:
+    build: ./mysql
+    image: saipillalamarri/mysql:v1
+    container_name: mysql
+    command: --mysql-native-password=ON --innodb-lock_wait_timeout=120
+    environment:
+      MYSQL_ROOT_PASSWORD: "RoboShop@1"
+
+  rabbitmq:
+    image: rabbitmq:3 
+    container_name: rabbitmq
+
+  catalogue:
+    build: ./catalogue
+    image : saipillalamarri/catalogue:v1
+    container_name: catalogue
+    depends_on:
+      - mongodb
+  
+  user:
+    build: ./user
+    image: saipillalamarri/user:v1
+    container_name: user
+    environment:
+      MONGO: true
+      REDIS_URL: 'redis://redis:6379'
+      MONGO_URL: "mongodb://mongodb:27017/users"
+    depends_on:
+      - redis
+      - mongodb
+  
+  cart:
+    build: ./cart
+    image: saipillalamarri/cart:v1
+    container_name: cart
+    environment:
+      REDIS_HOST: redis
+      CATALOGUE_HOST: catalogue
+      CATALOGUE_PORT: 8080
+    depends_on:
+      - redis
+      - catalogue
+  
+  shipping:
+    build: ./shipping
+    image: saipillalamarri/shipping:v1
+    container_name: shipping
+    environment:
+      CART_ENDPOINT: "cart:8080"
+      DB_HOST: mysql
+    depends_on:
+      - cart
+      - mysql
+  payment:
+    build: ./payment
+    image: saipillalamarri/payment:v1
+    container_name: payment
+    environment:
+      CART_HOST: cart
+      CART_PORT: 8080
+      USER_HOST: user
+      USER_PORT: 8080
+      AMQP_HOST: rabbitmq
+    depends_on:
+      - cart
+      - user
+      - rabbitmq
+  frontend:
+    build: ./frontend
+    image: saipillalamarri/frontend:v1
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - catalogue
+      - user
+      - cart
+      - shipping
+      - payment
+
+  
+  
