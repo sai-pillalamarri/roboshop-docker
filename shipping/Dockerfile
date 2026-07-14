@@ -18,7 +18,7 @@ WORKDIR /app
 EXPOSE 8080
 RUN addgroup -S roboshop && adduser -S -G roboshop roboshop && \
     chown -R roboshop /app
-COPY --from=builder /app/target/shipping.jar .
+COPY --from=builder /app/shipping.jar .
 USER roboshop
 CMD ["java","-jar","shipping.jar"]
 
