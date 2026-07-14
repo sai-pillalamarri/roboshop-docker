@@ -1,18 +1,18 @@
 name: roboshop
-networks:
-  default: # this means all the services in this file use this network
-    name: roboshop
-    driver: bridge
-    external: false # if true it should be created manually, if false docker creates this network
+
 services:
   mongodb:
     build: ./mongodb
     image: saipillalamarri/mongodb:v1
     container_name : mongodb
+    volumes:
+      - mongodb:/data/db
   
   redis:
     image: redis:7
     container_name: redis
+    volumes:
+      - redis:/data
 
   mysql:
     build: ./mysql
@@ -21,10 +21,14 @@ services:
     command: --mysql-native-password=ON --innodb-lock_wait_timeout=120
     environment:
       MYSQL_ROOT_PASSWORD: "RoboShop@1"
+    volumes:
+      - mysql:/var/lib/mysql
 
   rabbitmq:
     image: rabbitmq:3 
     container_name: rabbitmq
+    volumes:
+      - redis:/var/lib/rabbitmq
 
   catalogue:
     build: ./catalogue
@@ -93,6 +97,16 @@ services:
       - cart
       - shipping
       - payment
+networks:
+  default: # this means all the services in this file use this network
+    name: roboshop
+    driver: bridge
+    external: false # if true it should be created manually, if false docker creates this network
 
+volumes:
+  mongodb:
+  mysql:
+  redis:
+  rabbitmq:
   
   
